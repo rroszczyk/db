@@ -1,0 +1,326 @@
+SELECT 
+	OrderID, 
+	SUM(Quantity) AS [Total Quantity],
+	SUM(UnitPrice*Quantity*(1-Discount)) AS [Total Amount] FROM [Order Details]
+GROUP BY OrderID
+ORDER BY OrderID
+
+
+SELECT CategoryName AS [Category Name],
+       ProductName AS [Product Name] 
+	   FROM Categories AS C
+LEFT JOIN Products AS P ON C.CategoryID = P.CategoryID
+WHERE P.Discontinued = 0
+ORDER BY CategoryName, ProductName
+
+SELECT C.CategoryName AS [Category Name], 
+		SUM(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [Total Amount]
+FROM [Categories] AS C
+LEFT JOIN [Products] AS P ON C.CategoryID=P.CategoryID
+LEFT JOIN [Order Details] AS O ON P.ProductID=O.ProductID
+WHERE P.Discontinued = 0
+GROUP BY C.CategoryName
+ORDER BY C.CategoryName
+
+SELECT AVG(UnitPrice) FROM Products
+
+SELECT ProductName, UnitPrice
+FROM Products
+WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)
+ORDER BY ProductName
+LIMIT 10
+
+SELECT AVG(TotalAmount) FROM (
+SELECT E.EmployeeID, 
+		SUM(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [TotalAmount]
+FROM [Employees] AS E
+LEFT JOIN [Orders] AS R ON R.EmployeeID=E.EmployeeID
+LEFT JOIN [Order Details] AS O ON R.OrderID=O.OrderID
+GROUP BY E.EmployeeID)
+
+---
+SELECT E.EmployeeID, 
+		SUM(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [TotalAmount]
+FROM [Employees] AS E
+LEFT JOIN [Orders] AS R ON R.EmployeeID=E.EmployeeID
+LEFT JOIN [Order Details] AS O ON R.OrderID=O.OrderID
+GROUP BY E.EmployeeID
+HAVING TotalAmount > (
+	SELECT AVG(TotalAmount) FROM
+	(SELECT E.EmployeeID, 
+			SUM(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [TotalAmount]
+	FROM [Employees] AS E
+	LEFT JOIN [Orders] AS R ON R.EmployeeID=E.EmployeeID
+	LEFT JOIN [Order Details] AS O ON R.OrderID=O.OrderID
+	GROUP BY E.EmployeeID))
+
+
+SELECT strftime('%Y-%m', O.OrderDate) AS Year,
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [Total Amount],
+	AVG(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [Avg Amount] 
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+GROUP BY strftime('%Y-%m', O.OrderDate)
+
+SELECT C.CategoryName AS [Category Name], 
+       P.ProductName AS [Product Name],
+		SUM(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [Total Amount],
+		AVG(O.UnitPrice*O.Quantity*(1-O.Discount)) AS [Avg Amount]
+FROM [Categories] AS C
+LEFT JOIN [Products] AS P ON C.CategoryID=P.CategoryID
+LEFT JOIN [Order Details] AS O ON P.ProductID=O.ProductID
+WHERE P.Discontinued = 0
+GROUP BY C.CategoryName, P.ProductName
+ORDER BY [Total Amount] DESC
+LIMIT 10
+
+SELECT OrderDate, COUNT(*) AS [Order Quantity] FROM Orders
+WHERE OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY OrderDate
+ORDER BY OrderDate
+
+SELECT 
+	O.OrderDate, 
+	COUNT(DISTINCT O.OrderID) AS [Order Quantity],
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+WHERE O.OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY O.OrderDate
+ORDER BY O.OrderDate
+
+SELECT 
+	strftime('%Y-%m', O.OrderDate) AS Period, 
+	COUNT(DISTINCT O.OrderID) AS [Order Quantity],
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+WHERE strftime('%m', O.OrderDate) = '11'
+--WHERE O.OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY strftime('%Y-%m', O.OrderDate)
+ORDER BY O.OrderDate
+
+
+SELECT 
+	strftime('%Y-%m', O.OrderDate) AS Period, 
+	COUNT(DISTINCT O.OrderID) AS [Order Quantity],
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+WHERE strftime('%Y-%m', O.OrderDate) = '2016-11'
+--WHERE O.OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY strftime('%Y-%m', O.OrderDate)
+
+UNION
+
+SELECT 
+	strftime('%Y-%m', O.OrderDate) AS Period, 
+	COUNT(DISTINCT O.OrderID) AS [Order Quantity],
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+WHERE strftime('%Y-%m', O.OrderDate) = '2017-11'
+--WHERE O.OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY strftime('%Y-%m', O.OrderDate)
+
+SELECT COUNT(DISTINCT OrderID) FROM [Order Details]
+ORDER BY OrderID
+
+SELECT E.LastName || ' ' || E.FirstName AS [Employee],
+       SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [Total Amount],
+	   strftime('%Y', O.OrderDate) AS [Year]
+	   FROM [Employees] AS E
+LEFT JOIN [Orders] AS O ON E.EmployeeID=O.EmployeeID
+LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID
+WHERE O.OrderDate BETWEEN '2017-01-01' AND '2017-12-31'
+GROUP BY E.LastName, E.FirstName, strftime('%Y', O.OrderDate)
+ORDER BY Year, [Total Amount] DESC
+LIMIT 3
+
+SELECT 
+	C.CategoryName,
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [Total Amount],
+    strftime('%Y', O.OrderDate) AS [Year]
+	FROM [Categories] AS C
+LEFT JOIN Products AS P ON C.CategoryID=P.CategoryID
+LEFT JOIN [Order Details] AS D ON P.ProductID=D.ProductID
+LEFT JOIN [Orders] AS O ON O.OrderID=D.OrderID
+WHERE O.OrderDate BETWEEN '2017-01-01' AND '2017-12-31'
+GROUP BY C.CategoryName, strftime('%Y', O.OrderDate)
+ORDER BY Year, [Total Amount] 
+LIMIT 5
+
+
+WITH T AS (
+SELECT 
+	O.OrderDate, 
+	COUNT(DISTINCT O.OrderID) AS [Quantity],
+	SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderId=D.OrderId
+WHERE O.OrderDate BETWEEN DATE('2017-01-01') AND DATE('2017-06-30')
+GROUP BY O.OrderDate
+
+)
+SELECT T.OrderDate, T.TotalAmount FROM T
+
+WITH RECURSIVE Dates(ReportDate) AS (
+	VALUES('2016-07-01')
+	UNION ALL
+	SELECT DATE(ReportDate, '+1 day')
+	FROM Dates
+	WHERE ReportDate < '2016-07-31'
+)
+SELECT ReportDate, O.OrderID FROM Dates
+LEFT JOIN [Orders] AS O ON ReportDate=O.OrderDate
+ORDER BY ReportDate
+
+SELECT 
+	ProductName,
+	UnitPrice
+FROM Products
+WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)
+ORDER BY ProductName
+
+WITH CReport AS (
+	SELECT 
+		C.CategoryName, 
+		SUM(P.UnitPrice) AS CategoryPrice
+		FROM Categories AS C
+	LEFT JOIN Products AS P ON P.CategoryID=C.CategoryID
+	GROUP BY C.CategoryName
+)
+SELECT * FROM CReport AS C
+WHERE C.CategoryPrice > (SELECT AVG(CategoryPrice) FROM CReport)
+ORDER BY C.CategoryName
+
+
+SELECT 
+	C.CategoryName, 
+	SUM(P.UnitPrice) AS CategoryPrice
+	FROM Categories AS C
+LEFT JOIN Products AS P ON P.CategoryID=C.CategoryID
+GROUP BY C.CategoryName
+HAVING CategoryPrice > (SELECT AVG(CategoryPrice) FROM (
+							SELECT 
+								C.CategoryName, 
+								SUM(P.UnitPrice) AS CategoryPrice
+								FROM Categories AS C
+							LEFT JOIN Products AS P ON P.CategoryID=C.CategoryID
+						GROUP BY C.CategoryName))
+ORDER BY CategoryPrice
+
+
+WITH EReport AS (
+	SELECT E.LastName || ' ' || E.FirstName AS [Employee],
+       SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	   FROM [Employees] AS E
+	LEFT JOIN [Orders] AS O ON E.EmployeeID=O.EmployeeID
+	LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID
+	GROUP BY E.LastName, E.FirstName
+)
+SELECT Employee, TotalAmount, Z.AvgAmount FROM EReport
+LEFT JOIN ((SELECT AVG(TotalAmount) AS AvgAmount FROM EReport)) AS Z 
+WHERE TotalAmount > (SELECT AVG(TotalAmount) FROM EReport)
+ORDER BY Employee
+
+WITH EReport AS (
+	SELECT E.LastName || ' ' || E.FirstName AS [Employee],
+       SUM(D.UnitPrice*D.Quantity*(1-D.Discount)) AS [TotalAmount]
+	   FROM [Employees] AS E
+	LEFT JOIN [Orders] AS O ON E.EmployeeID=O.EmployeeID
+	LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID
+	GROUP BY E.LastName, E.FirstName
+)
+SELECT Employee, TotalAmount FROM EReport
+WHERE TotalAmount > (SELECT AVG(TotalAmount) FROM EReport)
+ORDER BY Employee
+
+SELECT DISTINCT
+	strftime('%Y-%m', OrderDate) AS Period,
+    SUM (D.UnitPrice*D.Quantity*(1-D.Discount)) AS TotalAmount 	
+	FROM Orders AS O
+LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID
+GROUP BY Period
+ORDER BY Period
+
+SELECT 
+	T.TerritoryDescription AS Territory,
+	SUM(D.Quantity*D.UnitPrice*(1-D.Discount)) AS TotalAmount
+FROM [Territories] AS T
+LEFT JOIN [EmployeeTerritories] AS ET ON T.TerritoryID=ET.TerritoryID
+LEFT JOIN [Orders] AS O ON O.EmployeeID=ET.EmployeeID
+LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID 
+WHERE O.OrderDate >= '2017-01-01' AND O.OrderDate <= '2017-12-31'
+GROUP BY T.TerritoryDescription
+ORDER BY T.TerritoryDescription
+
+SELECT 
+	T.TerritoryDescription AS Territory,
+	SUM(D.Quantity*D.UnitPrice*(1-D.Discount)) AS TotalAmount
+FROM [Territories] AS T
+LEFT JOIN [EmployeeTerritories] AS E ON T.TerritoryID=E.TerritoryID
+LEFT JOIN [Orders] AS O ON O.EmployeeID=E.EmployeeID
+LEFT JOIN [Order Details] AS D ON O.OrderID=D.OrderID 
+WHERE O.OrderDate BETWEEN '2017-01-01' AND '2017-12-31'
+GROUP BY T.TerritoryDescription
+HAVING TotalAmount>100000
+ORDER BY T.TerritoryDescription
+
+SELECT 
+	ProductName, 
+	UnitPrice 
+	FROM Products
+WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM Products)
+
+	SELECT 
+		ProductName, 
+		UnitPrice 
+		FROM Products
+	WHERE ProductName LIKE 'A%' 
+UNION
+	SELECT 
+		ProductName, 
+		UnitPrice 
+		FROM Products
+	WHERE ProductName LIKE 'C%' 
+ORDER BY ProductName
+
+WITH RECURSIVE RD(ReportDate) AS (
+	VALUES('2016-07-01')
+	UNION ALL
+	SELECT date(ReportDate, '+1 day')
+	FROM RD
+	WHERE ReportDate < '2016-07-31'
+)
+SELECT 
+	RD.ReportDate,
+	COALESCE(O.OrderID, 0) AS OrderID
+	FROM RD
+LEFT JOIN [Orders] AS O ON RD.ReportDate=O.OrderDate 
+
+WITH Report AS (
+SELECT 
+	OrderID,
+	SUM(UnitPrice*Quantity*(1-Discount)) AS Value
+FROM [Order Details]
+GROUP BY OrderID
+)
+SELECT 
+	OrderId, 
+	Value 
+FROM Report
+WHERE Value > (SELECT AVG(Value) FROM Report)
+
+SELECT * FROM (
+SELECT 
+	OrderID,
+	SUM(UnitPrice*Quantity*(1-Discount)) AS Value
+FROM [Order Details]
+GROUP BY OrderID
+) WHERE Value > (SELECT AVG(Value) FROM (SELECT 
+	OrderID,
+	SUM(UnitPrice*Quantity*(1-Discount)) AS Value
+FROM [Order Details]
+GROUP BY OrderID))
+
